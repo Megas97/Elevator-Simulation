@@ -1,0 +1,249 @@
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import javax.swing.*;
+import java.util.Timer;
+import java.util.TimerTask;
+
+public class Elevator extends Thread {
+	private int numOfFloors; // Number of floors
+    private JFrame cabin; // JFrame for the cabin
+    private JFrame floors[]; // JFrame for each floor
+    private JTextField curFloorCabin; // Current elevator place in the cabin
+    private JTextField cabinDoor; // Cabin door
+    private JCheckBox cabinButtons[]; // Check boxes in the elevator
+    private boolean goingUp = true; // Direction of the elevator
+    private Timer move = new Timer(); // Timer that moves elevator indefinitely
+    private Timer close; // Timer to close elevator doors once they have been opened
+    private JTextField curFloorFloors[]; // Current elevator place on the floors
+    private JCheckBox floorButtons[]; // Check boxes on the floors
+    private JTextField floorDoors[]; // Doors on the floors
+    private Actions actions;
+    private int curPassengerID = 1; // Current passenger number that is used in the thread name
+    private JTextField curPassengersCabin; // Current passenger number inside the cabin
+    private JTextField curPassengersFloors[]; // Current passenger number on each floor
+    
+    Elevator(int numOfFloors, Actions actions) {
+        this.numOfFloors = numOfFloors;
+        this.actions = actions;
+        
+        cabin = new JFrame("Cabin");
+        cabin.setBounds(10, 10, 300, 300);
+        cabin.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        
+        JPanel up = new JPanel(new FlowLayout()); // Up panel on the cabin
+        curFloorCabin = new JTextField("0", 3);
+        curFloorCabin.setEditable(false);
+        curFloorCabin.setHorizontalAlignment(JTextField.CENTER);
+        up.add("North", curFloorCabin);
+        cabin.add("North", up);
+        
+        JPanel rght = new JPanel(new GridLayout(numOfFloors, 1)); // Right panel on the cabin
+        cabinButtons = new JCheckBox[numOfFloors];
+        for (int i = numOfFloors - 1; i >= 0; i--) {
+        	cabinButtons[i] = new JCheckBox("F" + i);
+            rght.add(cabinButtons[i]);
+        }
+        cabin.add("East", rght);
+        
+        cabinDoor = new JTextField("Door Closed");
+        cabinDoor.setBackground(Color.red);
+        cabinDoor.setEditable(false);
+        cabinDoor.setHorizontalAlignment(JTextField.CENTER);
+        cabin.add("Center", cabinDoor);
+        
+        JPanel left = new JPanel(new GridLayout(numOfFloors, 1)); // Left panel on the cabin
+        left.setLayout(new BoxLayout(left, BoxLayout.Y_AXIS));
+        curPassengersCabin = new JTextField("0", 3);
+        curPassengersCabin.setEditable(false);
+        curPassengersCabin.setHorizontalAlignment(JTextField.CENTER);
+        left.add("West", curPassengersCabin);
+        cabin.add("West", left);
+        
+        cabin.add("South", new JPanel());
+        
+        cabin.setVisible(true);
+        
+        floors = new JFrame[numOfFloors];
+        JPanel floorUpPanels[] = new JPanel[numOfFloors]; // Up panels on the floors
+        curFloorFloors = new JTextField[numOfFloors];
+        JPanel floorRightPanels[] = new JPanel[numOfFloors]; // Right panels on the floors
+        floorButtons = new JCheckBox[numOfFloors];
+        JPanel floorLeftPanels[] = new JPanel[numOfFloors]; // Left panels on the floors
+        curPassengersFloors = new JTextField[numOfFloors];
+        floorDoors = new JTextField[numOfFloors];
+        
+        for(int i = 0; i < numOfFloors; i++) {
+        	floors[i] = new JFrame("Floor " + i);
+        	floors[i].setBounds(300 * (i + 1) + 10, 10, 300, 300);
+        	floors[i].setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            
+        	floorUpPanels[i] = new JPanel(new FlowLayout());
+            curFloorFloors[i] = new JTextField("0", 3);
+            curFloorFloors[i].setEditable(false);
+            curFloorFloors[i].setHorizontalAlignment(JTextField.CENTER);
+            floorUpPanels[i].add("North", curFloorFloors[i]);
+            floors[i].add("North", floorUpPanels[i]);
+            
+            floorRightPanels[i] = new JPanel(new GridLayout(1, 1));
+            floorButtons[i] = new JCheckBox("Call");
+            floorRightPanels[i].add(floorButtons[i]);
+            floors[i].add("East", floorRightPanels[i]);
+            
+            floorLeftPanels[i] = new JPanel(new GridLayout(1, 1));
+            floorLeftPanels[i].setLayout(new BoxLayout(floorLeftPanels[i], BoxLayout.Y_AXIS));
+            curPassengersFloors[i] = new JTextField("0", 3);
+            curPassengersFloors[i].setEditable(false);
+            curPassengersFloors[i].setHorizontalAlignment(JTextField.CENTER);
+            floorLeftPanels[i].add("West", curPassengersFloors[i]);
+            floors[i].add("West", floorLeftPanels[i]);
+            
+            floorDoors[i] = new JTextField("Door Closed");
+            floorDoors[i].setBackground(Color.red);
+            floorDoors[i].setEditable(false);
+            floorDoors[i].setHorizontalAlignment(JTextField.CENTER);
+            floors[i].add("Center", floorDoors[i]);
+            
+            floors[i].add("South", new JPanel());
+            
+            floors[i].setVisible(true);
+        }
+    }
+    
+    public void run() {
+    	// Add action listeners to all buttons on all floors
+    	for (int i = 0; i < floorButtons.length; i++) {
+    		floorButtons[i].addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                	Component component = (Component) e.getSource();
+                	JFrame frame = (JFrame) SwingUtilities.getRoot(component);
+                	int callingFloor = Integer.parseInt(frame.getTitle().substring(6));
+                	int currentFloor = Integer.parseInt(curFloorCabin.getText());
+                	if (callingFloor < currentFloor) {
+                		goingUp = false;
+                		System.out.println("\tElevator direction changed to: down");
+                		move.schedule(new MoveTask(), 5000, 5000);
+                	} else if (callingFloor > currentFloor) {
+                		goingUp = true;
+                		System.out.println("\tElevator direction changed to: up");
+                		move.schedule(new MoveTask(), 5000, 5000);
+                	} else {
+                		int curFloor = Integer.parseInt(curFloorCabin.getText());
+                		openDoorAndCreatePassenger(curFloor);
+                	}
+                }
+            });
+    	}
+    	
+    	// Add action listeners to all buttons inside the cabin
+    	for (int i = 0; i < cabinButtons.length; i++) {
+    		cabinButtons[i].addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                	int callingFloor = Integer.parseInt(e.getActionCommand().substring(1));
+                	int currentFloor = Integer.parseInt(curFloorCabin.getText());
+                	if (callingFloor < currentFloor) {
+                		goingUp = false;
+                		System.out.println("\tCabin direction changed to: down");
+                		move.schedule(new MoveTask(), 5000, 5000);
+                	} else if (callingFloor > currentFloor) {
+                		goingUp = true;
+                		System.out.println("\tCabin direction changed to: up");
+                		move.schedule(new MoveTask(), 5000, 5000);
+                	} else {
+                		int curFloor = Integer.parseInt(curFloorCabin.getText());
+                		openDoorAndCreatePassenger(curFloor);
+                	}
+                }
+            });
+    	}
+    }
+    
+    public void openDoorAndCreatePassenger(int curFloor) {
+    	actions.currentFloor = curFloor;
+        for (int j = 0; j < numOfFloors; j++) {
+        	curFloorFloors[j].setText(curFloorCabin.getText());
+        	
+        	if (curFloor == j) {
+        		
+        		// If the floor is checked => open & close both floor and cabin doors
+        		if (floorButtons[curFloor].isSelected() || cabinButtons[curFloor].isSelected()) {
+        			floorDoors[curFloor].setText("Door Opened");
+                    floorDoors[curFloor].setBackground(Color.green);
+                    cabinDoor.setText("Door Opened");
+                    cabinDoor.setBackground(Color.green);
+                    close = new Timer();
+                    close.schedule(new CloseTask(curFloor), 2000);
+                    move.cancel();
+                    move = new Timer();
+                    System.out.println("\tElevator door opened on floor: " + curFloor);
+        		}
+        		
+        		// If floor button is pressed on floor => create new Passenger
+        		if (floorButtons[curFloor].isSelected()) {
+        			boolean createNewPassenger = true;
+            		for (int k = 0; k < actions.waitingList.size(); k++) {
+            			if ((actions.waitingList.get(k).getFromFloor() == curFloor) && (actions.curPassengers < actions.maxPassengers)) {
+            				actions.takeElevator(actions.waitingList.get(k));
+            				createNewPassenger = false;
+            			}
+            		}
+            		if (createNewPassenger == true) {
+            			Passenger passenger = new Passenger("Passenger " + curPassengerID++, actions);
+                		passenger.setFromFloor(curFloor);
+                		passenger.start();
+            		}
+        		}
+        		
+        		// If cabin button is pressed in cabin => Passenger should leave the elevator
+        		if (cabinButtons[curFloor].isSelected()) {
+        			actions.leaveElevator();
+        		}
+        	}
+        	
+        	curPassengersCabin.setText(actions.curPassengers + "");
+        	curPassengersFloors[j].setText(actions.curPassengers + "");
+        }
+    }
+
+    class MoveTask extends TimerTask {
+        public void run() {
+        	int curFloor = Integer.parseInt(curFloorCabin.getText());
+            if (goingUp) {
+            	curFloorCabin.setText(++curFloor + "");
+                if (curFloor == (numOfFloors - 1)) {
+                	goingUp = false;
+                	System.out.println("\tElevator direction changed to: down");
+                }
+            }
+            else {
+            	curFloorCabin.setText(--curFloor + "");
+                if (curFloor == 0) {
+                	goingUp = true;
+                	System.out.println("\tElevator direction changed to: up");
+                }
+            }
+            openDoorAndCreatePassenger(curFloor);
+        }
+    }
+    
+    class CloseTask extends TimerTask {
+        private int num;
+        
+        CloseTask(int num) {
+            this.num = num;
+        }
+        
+        public void run() {
+        	floorDoors[num].setText("Door Closed");
+            floorDoors[num].setBackground(Color.red);
+            cabinDoor.setText("Door Closed");
+            cabinDoor.setBackground(Color.red);
+            floorButtons[num].setSelected(false);
+            cabinButtons[num].setSelected(false);
+            close.cancel();
+            System.out.println("\tElevator door closed on floor: " + num);
+        }
+    }
+}

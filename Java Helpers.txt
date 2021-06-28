@@ -1,0 +1,7 @@
+Java addActionListener On Checkbox: https://stackoverflow.com/questions/9882845/jcheckbox-actionlistener-and-itemlistener
+Get Title Of JFrame: https://stackoverflow.com/questions/36041702/how-do-you-get-the-value-of-the-jframe-title
+Get Parent JFrame Of Component: http://www.java2s.com/Tutorial/Java/0240__Swing/GettheJFramebygettingtherootofacomponent.htm
+Align Text Inside JTextField Component: http://www.java2s.com/Code/Java/Swing-JFC/AligningtheTextinaJTextFieldComponent.htm
+Generate Random Numbers In Given Range: https://www.educative.io/edpresso/how-to-generate-random-numbers-in-java
+Create Read-Only JTextField: https://examples.javacodegeeks.com/desktop-java/swing/jtextfield/create-read-only-non-editable-jtextfield/
+Make Checkbox Not Editable: https://stackoverflow.com/questions/7865804/how-to-make-a-checkbox-non-editable-in-java
